@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="h-full bg-stone-50">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cookie Craft | E-Commerce Intuitivo & Protótipo UX</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Outfit:wght@500;700;800&display=swap" rel="stylesheet">
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        cookie: {
+                            50: '#fffbeb',
+                            100: '#fef3c7',
+                            200: '#fde68a',
+                            500: '#d97706',
+                            600: '#b45309',
+                            800: '#78350f',
+                            900: '#451a03',
+                        },
+                        choc: {
+                            800: '#2c1810',
+                            900: '#1c0f0a',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'sans-serif'],
+                        display: ['Outfit', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #d97706;
+            border-radius: 10px;
+        }
+        @keyframes pulse-subtle {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.03); }
+        }
+        .animate-pulse-subtle {
+            animation: pulse-subtle 3s infinite ease-in-out;
+        }
+    </style>
+</head>
+<body class="h-full text-stone-800 font-sans flex flex-col min-h-screen selection:bg-amber-200 selection:text-amber-900">
+
+    <!-- BARRA SUPERIOR DE MODO DE TESTE DE USABILIDADE (PARA O SEMINÁRIO) -->
+    <div id="usability-bar" class="bg-gradient-to-r from-amber-600 via-amber-700 to-amber-900 text-white px-4 py-2.5 text-xs sm:text-sm font-medium flex flex-wrap items-center justify-between shadow-md sticky top-0 z-50">
+        <div class="flex items-center gap-2">
+            <span class="bg-white/20 text-amber-100 px-2.5 py-1 rounded-full text-xs font-bold tracking-wide flex items-center gap-1.5">
+                <i class="fa-solid fa-flask text-amber-300"></i> MODO DE TESTE AO VIVO
+            </span>
+            <span id="task-prompt" class="hidden md:inline text-amber-100 font-normal">
+                <strong>Tarefa do Teste:</strong> "Encontre o Cookie de Nutella, adicione ao carrinho e simule o pagamento via PIX em menos de 60s."
+            </span>
+        </div>
+        <div class="flex items-center gap-3 ml-auto">
+            <div class="flex items-center gap-1.5 bg-black/30 px-3 py-1 rounded-lg text-amber-200 font-mono text-xs">
+                <i class="fa-regular fa-clock"></i> <span id="timer">00:00</span>
+            </div>
+            <button onclick="restartTest()" class="bg-amber-500 hover:bg-amber-400 text-amber-950 px-3 py-1 rounded-lg font-bold transition text-xs flex items-center gap-1">
+                <i class="fa-solid fa-rotate-right"></i> Reiniciar Teste
+            </button>
+        </div>
+    </div>
+
+    <!-- HEADER / NAVEGAÇÃO -->
+    <header class="bg-white/95 backdrop-blur-md sticky top-[41px] z-40 border-b border-stone-200 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-20 gap-4">
+                
+                <!-- LOGO -->
+                <a href="#" onclick="showScreen('catalog')" class="flex items-center gap-3 group">
+                    <div class="w-12 h-12 rounded-2xl bg-amber-500 flex items-center justify-center text-white text-2xl shadow-lg shadow-amber-500/30 group-hover:rotate-12 transition-transform duration-300">
+                        🍪
+                    </div>
+                    <div>
+                        <span class="font-display font-extrabold text-2xl text-stone-900 tracking-tight block leading-none">Cookie<span class="text-amber-600">Craft</span></span>
+                        <span class="text-[10px] font-bold text-stone-400 tracking-wider uppercase block mt-1">Gourmet &amp; Fresh Baked</span>
+                    </div>
+                </a>
+
+                <!-- BUSCA INTUITIVA -->
+                <div class="hidden md:flex flex-1 max-w-md mx-8 relative">
+                    <div class="relative w-full">
+                        <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-stone-400"></i>
+                        <input type="text" id="search-input" onkeyup="filterCookies()" placeholder="O que você quer saborear hoje? (ex: Nutella, Red Velvet)" class="w-full bg-stone-100 border border-stone-200 rounded-2xl pl-11 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:bg-white transition">
+                    </div>
+                </div>
+
+                <!-- AÇÕES (STATUS CARRINHO E NAVEGAÇÃO) -->
+                <div class="flex items-center gap-3">
+                    <button onclick="showScreen('catalog')" class="hidden sm:flex items-center gap-2 px-4 py-2.5 rounded-xl text-stone-600 hover:text-amber-600 hover:bg-amber-50 font-semibold text-sm transition">
+                        <i class="fa-solid fa-cookie-bite"></i> Catálogo
+                    </button>
+
+                    <!-- BOTÃO DO CARRINHO COM BADGE -->
+                    <button onclick="toggleCartDrawer(true)" class="relative bg-amber-600 hover:bg-amber-700 text-white font-bold px-4 py-2.5 rounded-2xl flex items-center gap-2.5 shadow-md shadow-amber-600/20 active:scale-95 transition">
+                        <i class="fa-solid fa-cart-shopping text-base"></i>
+                        <span class="hidden sm:inline text-sm">Meu Carrinho</span>
+                        <span id="cart-count" class="bg-amber-950 text-amber-200 text-xs font-black px-2 py-0.5 rounded-full">0</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- CATEGORIAS EM CHIPS (FILTROS RÁPIDOS) -->
+        <div class="border-t border-stone-100 bg-stone-50/50 py-2.5 px-4 overflow-x-auto custom-scrollbar">
+            <div class="max-w-7xl mx-auto flex items-center gap-2 text-xs sm:text-sm">
+                <span class="text-stone-400 font-bold uppercase text-[11px] tracking-wider pr-2">Filtros:</span>
+                <button onclick="filterCategory('all')" class="cat-chip active bg-amber-600 text-white px-4 py-1.5 rounded-full font-semibold shadow-sm transition whitespace-nowrap">
+                    ✨ Todos os Cookies
+                </button>
+                <button onclick="filterCategory('best')" class="cat-chip bg-white text-stone-600 border border-stone-200 hover:bg-amber-50 px-4 py-1.5 rounded-full font-semibold transition whitespace-nowrap">
+                    🔥 Mais Vendidos
+                </button>
+                <button onclick="filterCategory('stuffed')" class="cat-chip bg-white text-stone-600 border border-stone-200 hover:bg-amber-50 px-4 py-1.5 rounded-full font-semibold transition whitespace-nowrap">
+                    🍫 Recheados
+                </button>
+                <button onclick="filterCategory('special')" class="cat-chip bg-white text-stone-600 border border-stone-200 hover:bg-amber-50 px-4 py-1.5 rounded-full font-semibold transition whitespace-nowrap">
+                    🌱 Veganos &amp; Especiais
+                </button>
+                <button onclick="filterCategory('combos')" class="cat-chip bg-white text-stone-600 border border-stone-200 hover:bg-amber-50 px-4 py-1.5 rounded-full font-semibold transition whitespace-nowrap">
+                    🎁 Caixas &amp; Presentes
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- CONTEÚDO PRINCIPAL (TELA DA VITRINE) -->
+    <main id="screen-catalog" class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+        
+        <!-- HERO BANNER -->
+        <div class="relative bg-gradient-to-r from-stone-900 via-amber-950 to-stone-900 rounded-3xl p-8 sm:p-12 text-white overflow-hidden shadow-xl border border-amber-900/30">
+            <div class="absolute -right-10 -bottom-10 opacity-20 text-[200px] pointer-events-none">🍪</div>
+            <div class="relative z-10 max-w-xl">
+                <div class="inline-flex items-center gap-2 bg-amber-500/20 text-amber-300 border border-amber-500/30 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider mb-4">
+                    <i class="fa-solid fa-fire text-amber-400"></i> Assados Diariamente às 14h
+                </div>
+                <h1 class="font-display font-black text-3xl sm:text-5xl text-amber-100 leading-tight mb-4">
+                    A experiência definitiva em cookies artesanais.
+                </h1>
+                <p class="text-stone-300 text-sm sm:text-base leading-relaxed mb-6">
+                    Massa crocante por fora, recheio derretido por dentro. Peça em menos de 1 minuto com entrega ultra-rápida.
+                </p>
+                <div class="flex flex-wrap items-center gap-4">
+                    <button onclick="scrollToGrid()" class="bg-amber-500 hover:bg-amber-400 text-stone-950 font-extrabold px-6 py-3.5 rounded-2xl shadow-lg shadow-amber-500/25 transition active:scale-95 flex items-center gap-2 text-sm">
+                        <i class="fa-solid fa-cookie"></i> Escolher Meu Cookie
+                    </button>
+                    <div class="flex items-center gap-2 text-stone-300 text-xs font-semibold bg-white/10 backdrop-blur px-4 py-3 rounded-2xl">
+                        <i class="fa-solid fa-truck-fast text-amber-400 text-sm"></i> Entrega média em 28 min
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- GRID DE PRODUTOS -->
+        <div id="catalog-grid-anchor">
+            <div class="flex items-center justify-between mb-6">
+                <div>
+                    <h2 class="font-display font-extrabold text-2xl text-stone-900">Cardápio de Hoje</h2>
+                    <p class="text-stone-500 text-xs sm:text-sm mt-0.5">Selecione para ver detalhes ou adicione diretamente ao carrinho</p>
+                </div>
+                <span id="product-count-label" class="text-xs font-bold text-stone-400 bg-stone-200/60 px-3 py-1 rounded-full">6 produtos disponíveis</span>
+            </div>
+
+            <!-- CONTAINER DOS CARDS -->
+            <div id="cookies-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Inserido dinamicamente via JS -->
+            </div>
+        </div>
+    </main>
+
+    <!-- TELA 2: MODAL DE DETALHES DO PRODUTO (PDP - INTUITIVA) -->
+    <div id="pdp-modal" class="fixed inset-0 z-50 bg-stone-900/70 backdrop-blur-sm flex items-center justify-center p-4 hidden opacity-0 transition-opacity duration-300">
+        <div class="bg-white rounded-3xl max-w-3xl w-full overflow-hidden shadow-2xl border border-stone-200 transform scale-95 transition-transform duration-300 max-h-[90vh] flex flex-col md:flex-row relative">
+            
+            <!-- BOTÃO FECHAR -->
+            <button onclick="closePDP()" class="absolute top-4 right-4 z-20 w-10 h-10 bg-white/80 hover:bg-white text-stone-600 rounded-full flex items-center justify-center shadow-md transition">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+
+            <!-- IMAGEM PDP -->
+            <div class="md:w-1/2 bg-stone-100 relative h-64 md:h-auto overflow-hidden">
+                <img id="pdp-image" src="" alt="" class="w-full h-full object-cover">
+                <div id="pdp-tag" class="absolute top-4 left-4 bg-amber-600 text-white font-bold text-xs px-3 py-1.5 rounded-full shadow-sm">
+                    Recheado
+                </div>
+            </div>
+
+            <!-- INFORMAÇÕES PDP -->
+            <div class="md:w-1/2 p-6 sm:p-8 flex flex-col justify-between overflow-y-auto custom-scrollbar">
+                <div>
+                    <div class="flex items-center gap-1 text-amber-500 text-xs mb-2">
+                        <i class="fa-solid fa-star"></i>
+                        <span id="pdp-rating" class="font-bold text-stone-800">4.9</span>
+                        <span class="text-stone-400">(+120 avaliações)</span>
+                    </div>
+
+                    <h2 id="pdp-title" class="font-display font-extrabold text-2xl text-stone-900 mb-2">Cookie Title</h2>
+                    <p id="pdp-price" class="text-amber-700 font-extrabold text-2xl mb-4">R$ 0,00</p>
+                    <p id="pdp-desc" class="text-stone-600 text-sm leading-relaxed mb-6">Descrição detalhada do cookie artesanal com recheio extra cremoso.</p>
+
+                    <!-- OPÇÕES DE ADICIONAIS / ADAPTATIVO -->
+                    <div class="space-y-4 mb-6">
+                        <label class="block text-xs font-bold uppercase text-stone-400 tracking-wider">Turbine seu Cookie:</label>
+                        <div class="space-y-2">
+                            <label class="flex items-center justify-between p-3 rounded-xl border border-stone-200 hover:border-amber-400 cursor-pointer transition text-sm">
+                                <div class="flex items-center gap-2">
+                                    <input type="checkbox" id="addon-warmed" class="rounded text-amber-600 focus:ring-amber-500">
+                                    <span class="font-medium text-stone-700">Entregar bem quentinho ♨️</span>
+                                </div>
+                                <span class="text-stone-400 text-xs font-bold">Grátis</span>
+                            </label>
+                            <label class="flex items-center justify-between p-3 rounded-xl border border-stone-200 hover:border-amber-400 cursor-pointer transition text-sm">
+                                <div class="flex items-center gap-2">
+                                    <input type="checkbox" id="addon-sauce" class="rounded text-amber-600 focus:ring-amber-500">
+                                    <span class="font-medium text-stone-700">Calda extra de chocolate (+30g)</span>
+                                </div>
+                                <span class="text-amber-600 font-bold text-xs">+ R$ 4,50</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- SIMULADOR DE FRETE CEP -->
+                    <div class="bg-amber-50/60 p-3.5 rounded-2xl border border-amber-200/60 mb-6">
+                        <label class="block text-xs font-bold text-amber-900 mb-1.5 flex items-center gap-1">
+                            <i class="fa-solid fa-location-dot text-amber-600"></i> Calcular Frete para seu CEP:
+                        </label>
+                        <div class="flex gap-2">
+                            <input type="text" id="cep-input" placeholder="00000-000" maxlength="9" class="w-full bg-white border border-amber-300 rounded-xl px-3 py-1.5 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-amber-500">
+                            <button onclick="calculateFreight()" class="bg-amber-600 text-white font-bold text-xs px-3 py-1.5 rounded-xl hover:bg-amber-700 transition">OK</button>
+                        </div>
+                        <p id="freight-result" class="text-[11px] text-amber-800 font-medium mt-2 hidden"></p>
+                    </div>
+                </div>
+
+                <!-- CONTROLE DE QUANTIDADE E BOTÃO ADICIONAR -->
+                <div class="pt-4 border-t border-stone-100 flex items-center gap-3">
+                    <div class="flex items-center border border-stone-200 rounded-xl bg-stone-50 p-1">
+                        <button onclick="adjustPDPQty(-1)" class="w-8 h-8 rounded-lg bg-white shadow-sm flex items-center justify-center font-bold text-stone-600 hover:bg-stone-100">-</button>
+                        <span id="pdp-qty" class="w-8 text-center font-bold text-sm">1</span>
+                        <button onclick="adjustPDPQty(1)" class="w-8 h-8 rounded-lg bg-white shadow-sm flex items-center justify-center font-bold text-stone-600 hover:bg-stone-100">+</button>
+                    </div>
+
+                    <button onclick="addPDPToCart()" class="flex-1 bg-amber-600 hover:bg-amber-700 text-white font-extrabold py-3 px-4 rounded-2xl shadow-lg shadow-amber-600/30 transition active:scale-95 flex items-center justify-center gap-2 text-sm">
+                        <i class="fa-solid fa-cart-plus"></i> Adicionar ao Carrinho
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TELA 3: DRAWER DO CARRINHO (MODAL SLIDE-OVER LATERAL) -->
+    <div id="cart-drawer" class="fixed inset-0 z-50 bg-stone-900/60 backdrop-blur-sm flex justify-end opacity-0 pointer-events-none transition-opacity duration-300">
+        <div id="cart-drawer-panel" class="w-full max-w-md bg-white h-full shadow-2xl flex flex-col justify-between transform translate-x-full transition-transform duration-300">
+            
+            <!-- TOPO DO CARRINHO -->
+            <div class="p-6 border-b border-stone-200 flex items-center justify-between bg-stone-50">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center font-bold">
+                        🛒
+                    </div>
+                    <div>
+                        <h3 class="font-display font-extrabold text-lg text-stone-900">Seu Carrinho</h3>
+                        <p id="drawer-item-count" class="text-xs text-stone-500">0 itens adicionados</p>
+                    </div>
+                </div>
+                <button onclick="toggleCartDrawer(false)" class="w-9 h-9 text-stone-400 hover:text-stone-700 rounded-xl hover:bg-stone-200/50 flex items-center justify-center transition">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <!-- BARRA DE PROGRESSO DE FRETE GRÁTIS -->
+            <div class="bg-amber-50 px-6 py-3 border-b border-amber-100">
+                <div class="flex items-center justify-between text-xs font-bold text-amber-900 mb-1">
+                    <span id="free-shipping-text">Adicione R$ 40,00 para Frete Grátis!</span>
+                    <i class="fa-solid fa-truck-fast text-amber-600"></i>
+                </div>
+                <div class="w-full bg-amber-200/70 h-2 rounded-full overflow-hidden">
+                    <div id="free-shipping-bar" class="bg-amber-600 h-full rounded-full transition-all duration-500" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <!-- LISTA DE ITENS DO CARRINHO -->
+            <div id="cart-items-container" class="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar">
+                <!-- Itens inseridos dinamicamente -->
+            </div>
+
+            <!-- RODAPÉ E CHECKOUT DO CARRINHO -->
+            <div class="p-6 border-t border-stone-200 bg-stone-50 space-y-4">
+                <div class="space-y-1.5 text-sm">
+                    <div class="flex justify-between text-stone-500">
+                        <span>Subtotal</span>
+                        <span id="cart-subtotal" class="font-medium text-stone-800">R$ 0,00</span>
+                    </div>
+                    <div class="flex justify-between text-stone-500">
+                        <span>Frete</span>
+                        <span id="cart-freight" class="font-semibold text-emerald-600">Grátis</span>
+                    </div>
+                    <div class="flex justify-between text-stone-900 text-base font-extrabold pt-2 border-t border-stone-200">
+                        <span>Total</span>
+                        <span id="cart-total" class="text-amber-700">R$ 0,00</span>
+                    </div>
+                </div>
+
+                <button onclick="goToCheckout()" id="btn-to-checkout" class="w-full bg-amber-600 hover:bg-amber-700 text-white font-extrabold py-3.5 px-4 rounded-2xl shadow-lg shadow-amber-600/25 transition active:scale-95 flex items-center justify-center gap-2 text-base">
+                    <span>Finalizar Compra</span>
+                    <i class="fa-solid fa-arrow-right"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TELA 4: CHECKOUT ONE-STEP (SIMPLIFICADO) -->
+    <main id="screen-checkout" class="flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 hidden">
+        <button onclick="showScreen('catalog')" class="inline-flex items-center gap-2 text-stone-500 hover:text-amber-600 font-bold text-sm mb-6 transition">
+            <i class="fa-solid fa-arrow-left"></i> Voltar ao Catálogo
+        </button>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            
+            <!-- FORMULÁRIO CHECKOUT (ESQUERDA) -->
+            <div class="lg:col-span-7 space-y-6">
+                <div class="bg-white rounded-3xl p-6 sm:p-8 shadow-md border border-stone-200 space-y-6">
+                    <div class="flex items-center gap-3 border-b border-stone-100 pb-4">
+                        <div class="w-9 h-9 rounded-xl bg-amber-600 text-white flex items-center justify-center font-bold text-sm">1</div>
+                        <h2 class="font-display font-extrabold text-xl text-stone-900">Seus Dados &amp; Entrega</h2>
+                    </div>
+
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-bold uppercase text-stone-400 mb-1">Nome Completo</label>
+                            <input type="text" id="chk-name" value="Prof. Avaliador da Silva" class="w-full bg-stone-50 border border-stone-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 font-medium">
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-bold uppercase text-stone-400 mb-1">WhatsApp / Telefone</label>
+                                <input type="text" id="chk-phone" value="(11) 99887-6655" class="w-full bg-stone-50 border border-stone-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 font-medium">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold uppercase text-stone-400 mb-1">CEP</label>
+                                <input type="text" id="chk-cep" value="01310-100" class="w-full bg-stone-50 border border-stone-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 font-mono">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold uppercase text-stone-400 mb-1">Endereço de Entrega</label>
+                            <input type="text" id="chk-address" value="Av. Paulista, 1000 - Apto 42 (Bela Vista)" class="w-full bg-stone-50 border border-stone-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 font-medium">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PAGAMENTO -->
+                <div class="bg-white rounded-3xl p-6 sm:p-8 shadow-md border border-stone-200 space-y-6">
+                    <div class="flex items-center gap-3 border-b border-stone-100 pb-4">
+                        <div class="w-9 h-9 rounded-xl bg-amber-600 text-white flex items-center justify-center font-bold text-sm">2</div>
+                        <h2 class="font-display font-extrabold text-xl text-stone-900">Forma de Pagamento</h2>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <label onclick="selectPayment('pix')" class="pay-option border-2 border-amber-600 bg-amber-50/50 p-4 rounded-2xl cursor-pointer flex flex-col items-center justify-center text-center transition">
+                            <i class="fa-brands fa-pix text-2xl text-emerald-600 mb-2"></i>
+                            <span class="font-bold text-sm text-stone-800">PIX Instantâneo</span>
+                            <span class="text-[10px] font-bold text-emerald-600 bg-emerald-100 px-2 py-0.5 rounded-full mt-1">Aprovação em 5s</span>
+                        </label>
+                        <label onclick="selectPayment('card')" class="pay-option border-2 border-stone-200 hover:border-amber-400 p-4 rounded-2xl cursor-pointer flex flex-col items-center justify-center text-center transition">
+                            <i class="fa-solid fa-credit-card text-2xl text-stone-600 mb-2"></i>
+                            <span class="font-bold text-sm text-stone-800">Cartão de Crédito</span>
+                            <span class="text-[10px] text-stone-400 mt-1">Até 3x sem juros</span>
+                        </label>
+                    </div>
+
+                    <!-- DETALHE DO PIX (PADRÃO SELECIONADO) -->
+                    <div id="pix-details" class="bg-stone-50 p-4 rounded-2xl border border-stone-200 text-center space-y-3">
+                        <div class="w-32 h-32 bg-white border-2 border-stone-300 mx-auto rounded-xl p-2 flex items-center justify-center shadow-inner">
+                            <i class="fa-solid fa-qrcode text-7xl text-stone-800"></i>
+                        </div>
+                        <p class="text-xs text-stone-600">Escaneie o QR Code no app do seu banco ou use a chave Copia e Cola ao finalizar.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RESUMO DO PEDIDO (DIREITA) -->
+            <div class="lg:col-span-5">
+                <div class="bg-white rounded-3xl p-6 sm:p-8 shadow-md border border-stone-200 sticky top-36 space-y-6">
+                    <h3 class="font-display font-extrabold text-xl text-stone-900 border-b border-stone-100 pb-4">Resumo da Compra</h3>
+                    
+                    <div id="checkout-summary-items" class="space-y-3 max-h-48 overflow-y-auto custom-scrollbar">
+                        <!-- Itens do resumo -->
+                    </div>
+
+                    <div class="border-t border-stone-100 pt-4 space-y-2 text-sm">
+                        <div class="flex justify-between text-stone-500">
+                            <span>Produtos</span>
+                            <span id="chk-subtotal">R$ 0,00</span>
+                        </div>
+                        <div class="flex justify-between text-stone-500">
+                            <span>Frete Expresso</span>
+                            <span class="text-emerald-600 font-bold">Grátis</span>
+                        </div>
+                        <div class="flex justify-between text-stone-900 text-xl font-black pt-3 border-t border-stone-200">
+                            <span>Total a Pagar</span>
+                            <span id="chk-total" class="text-amber-700">R$ 0,00</span>
+                        </div>
+                    </div>
+
+                    <button onclick="completeOrder()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold py-4 px-4 rounded-2xl shadow-lg shadow-emerald-600/30 transition active:scale-95 flex items-center justify-center gap-2 text-base animate-pulse-subtle">
+                        <i class="fa-solid fa-lock"></i>
+                        <span>Confirmar e Pagar Agora</span>
+                    </button>
+                    
+                    <p class="text-[11px] text-center text-stone-400 flex items-center justify-center gap-1">
+                        <i class="fa-solid fa-shield-halved text-emerald-600"></i> Pagamento 100% Seguro &amp; Criptografado
+                    </p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- TELA 5: SUCESSO DO PEDIDO / CONFIRMAÇÃO (STATUS AO VIVO) -->
+    <main id="screen-success" class="flex-1 max-w-3xl w-full mx-auto px-4 py-12 hidden text-center">
+        <div class="bg-white rounded-3xl p-8 sm:p-12 shadow-xl border border-stone-200 space-y-6">
+            <div class="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto text-4xl shadow-inner animate-bounce">
+                <i class="fa-solid fa-check"></i>
+            </div>
+            
+            <div>
+                <span class="bg-emerald-100 text-emerald-800 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide">Pedido #8492 Confirmado</span>
+                <h1 class="font-display font-black text-3xl sm:text-4xl text-stone-900 mt-3">Seus Cookies já estão no forno! 🍪♨️</h1>
+                <p class="text-stone-500 text-sm sm:text-base mt-2 max-w-md mx-auto">Recebemos seu pagamento via PIX. Tempo estimado de entrega: <strong class="text-stone-800">25 minutos</strong>.</p>
+            </div>
+
+            <!-- STATUS TRACKING -->
+            <div class="bg-stone-50 p-6 rounded-2xl border border-stone-200 text-left space-y-4 max-w-md mx-auto">
+                <h4 class="font-bold text-xs uppercase text-stone-400 tracking-wider">Acompanhamento do Pedido:</h4>
+                <div class="space-y-3">
+                    <div class="flex items-center gap-3">
+                        <i class="fa-solid fa-circle-check text-emerald-600 text-lg"></i>
+                        <span class="text-sm font-semibold text-stone-800">Pedido Confirmado &amp; Pago</span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <div class="w-4 h-4 rounded-full border-2 border-amber-600 border-t-transparent animate-spin ml-0.5"></div>
+                        <span class="text-sm font-bold text-amber-700">Assando &amp; Embalando Cookies</span>
+                    </div>
+                    <div class="flex items-center gap-3 text-stone-400">
+                        <i class="fa-regular fa-circle text-lg ml-0.5"></i>
+                        <span class="text-sm">Saiu para Entrega (Entregador João)</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pt-4 flex flex-wrap justify-center gap-4">
+                <button onclick="showScreen('catalog')" class="bg-amber-600 hover:bg-amber-700 text-white font-extrabold px-6 py-3 rounded-2xl transition text-sm">
+                    Fazer Novo Pedido
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <!-- NOTIFICAÇÃO TOAST FLUTUANTE -->
+    <div id="toast" class="fixed bottom-6 right-6 z-50 bg-stone-900 text-white px-5 py-3.5 rounded-2xl shadow-2xl flex items-center gap-3 opacity-0 pointer-events-none transition-all duration-300 transform translate-y-4">
+        <i class="fa-solid fa-circle-check text-emerald-400 text-lg"></i>
+        <span id="toast-message" class="text-sm font-medium">Item adicionado com sucesso!</span>
+    </div>
+
+    <!-- RODAPÉ -->
+    <footer class="bg-stone-900 text-stone-400 py-8 border-t border-stone-800 mt-auto">
+        <div class="max-w-7xl mx-auto px-4 text-center text-xs space-y-2">
+            <p>© 2026 Cookie Craft - Protótipo Desenvolvido para Aula de Análise e Projeto de Sistemas (UX/UI).</p>
+            <p class="text-stone-500">Desenvolvido com foco na regra dos 3 cliques e acessibilidade visual WCAG.</p>
+        </div>
+    </footer>
+
+    <!-- JAVASCRIPT DE FUNCIONALIDADES DA APLICAÇÃO -->
+    <script>
+        // BASE DE DADOS DOS COOKIES DA LOJA
+        const COOKIES_DATA = [
+            {
+                id: 1,
+                title: "Cookie de Nutella & Ninho",
+                category: "stuffed",
+                tag: "Best-Seller",
+                isBest: true,
+                price: 14.90,
+                rating: 4.9,
+                desc: "Massa tradicional macia recheada com 40g de Nutella pura e coberta com Leite Ninho polvilhado.",
+                img: "https://images.unsplash.com/photo-1558961363-fa8fdf82db35?auto=format&fit=crop&w=800&q=80"
+            },
+            {
+                id: 2,
+                title: "Triple Chocolate Fudge",
+                category: "stuffed",
+                tag: "Super Chocolate",
+                isBest: true,
+                price: 13.90,
+                rating: 4.8,
+                desc: "Massa de cacau 70%, gotas de chocolate ao leite e recheio de brigadeiro gourmet de colher.",
+                img: "https://images.unsplash.com/photo-1607920592519-bab4d7db727d?auto=format&fit=crop&w=800&q=80"
+            },
+            {
+                id: 3,
+                title: "Red Velvet com Cream Cheese",
+                category: "stuffed",
+                tag: "Queridinho",
+                isBest: true,
+                price: 15.50,
+                rating: 5.0,
+                desc: "Massa aveludada vermelha com suave toque de baunilha e recheio artesanal de cream cheese doce.",
+                img: "https://images.unsplash.com/photo-1590080875515-8a3a8dc5735e?auto=format&fit=crop&w=800&q=80"
+            },
+            {
+                id: 4,
+                title: "Classic Chocolate Chips",
+                category: "all",
+                tag: "Clássico",
+                isBest: false,
+                price: 10.90,
+                rating: 4.7,
+                desc: "O tradicional cookie americano com bordas crocantes, centro macio e gotas de chocolate nobre.",
+                img: "https://images.unsplash.com/photo-1499636136210-6f4ee915583e?auto=format&fit=crop&w=800&q=80"
+            },
+            {
+                id: 5,
+                title: "Cookie Vegano Gotas 70%",
+                category: "special",
+                tag: "Sem Lactose",
+                isBest: false,
+                price: 14.00,
+                rating: 4.9,
+                desc: "100% livre de ingredientes de origem animal. Feito com óleo de coco orgânico e gotas 70% cacau.",
+                img: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=800&q=80"
+            },
+            {
+                id: 6,
+                title: "Caixa Degustação (6 Unidades)",
+                category: "combos",
+                tag: "Para Presente",
+                isBest: true,
+                price: 69.90,
+                rating: 5.0,
+                desc: "Uma seleção especial contendo 1 unidade de cada um dos nossos sabores mais vendidos em embalagem de luxo.",
+                img: "https://images.unsplash.com/photo-1579372786545-d24232daf58c?auto=format&fit=crop&w=800&q=80"
+            }
+        ];
+
+        // ESTADO DA APLICAÇÃO
+        let cart = [];
+        let activePDPProduct = null;
+        let pdpQtyValue = 1;
+        let timerSeconds = 0;
+        let timerInterval = null;
+
+        // INICIALIZAÇÃO
+        document.addEventListener("DOMContentLoaded", () => {
+            renderCatalog(COOKIES_DATA);
+            startTimer();
+        });
+
+        // NAVEGAÇÃO ENTRE TELAS
+        function showScreen(screenName) {
+            document.getElementById('screen-catalog').classList.add('hidden');
+            document.getElementById('screen-checkout').classList.add('hidden');
+            document.getElementById('screen-success').classList.add('hidden');
+
+            if (screenName === 'catalog') {
+                document.getElementById('screen-catalog').classList.remove('hidden');
+            } else if (screenName === 'checkout') {
+                document.getElementById('screen-checkout').classList.remove('hidden');
+                renderCheckoutSummary();
+            } else if (screenName === 'success') {
+                document.getElementById('screen-success').classList.remove('hidden');
+            }
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // RENDERIZAR GRID DE COOKIES
+        function renderCatalog(items) {
+            const grid = document.getElementById('cookies-grid');
+            document.getElementById('product-count-label').innerText = `${items.length} produtos disponíveis`;
+
+            if (items.length === 0) {
+                grid.innerHTML = `
+                    <div class="col-span-full py-12 text-center text-stone-400">
+                        <i class="fa-solid fa-cookie-bite text-5xl mb-3"></i>
+                        <p class="font-bold">Nenhum cookie encontrado para essa busca.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            grid.innerHTML = items.map(c => `
+                <div class="bg-white rounded-3xl overflow-hidden border border-stone-200 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between group">
+                    <div>
+                        <!-- IMAGEM COM TAG -->
+                        <div class="relative h-48 overflow-hidden bg-stone-100 cursor-pointer" onclick="openPDP(${c.id})">
+                            <img src="${c.img}" alt="${c.title}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
+                            <span class="absolute top-3 left-3 bg-amber-600 text-white font-bold text-[11px] px-3 py-1 rounded-full shadow-md">
+                                ${c.tag}
+                            </span>
+                            <div class="absolute inset-0 bg-stone-900/20 opacity-0 group-hover:opacity-100 transition flex items-center justify-center text-white font-bold text-xs gap-2">
+                                <i class="fa-solid fa-eye"></i> Espiar Detalhes
+                            </div>
+                        </div>
+
+                        <!-- CORPO DO CARD -->
+                        <div class="p-5">
+                            <div class="flex items-center gap-1 text-amber-500 text-xs mb-1">
+                                <i class="fa-solid fa-star"></i>
+                                <span class="font-bold text-stone-800">${c.rating}</span>
+                            </div>
+                            <h3 onclick="openPDP(${c.id})" class="font-display font-bold text-lg text-stone-900 cursor-pointer hover:text-amber-600 transition leading-snug">
+                                ${c.title}
+                            </h3>
+                            <p class="text-stone-500 text-xs mt-1.5 line-clamp-2 leading-relaxed">
+                                ${c.desc}
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- FOOTER DO CARD -->
+                    <div class="px-5 pb-5 pt-2 flex items-center justify-between border-t border-stone-100 mt-2">
+                        <div>
+                            <span class="text-[10px] text-stone-400 font-bold uppercase block">Preço</span>
+                            <span class="text-amber-700 font-extrabold text-lg">R$ ${c.price.toFixed(2).replace('.', ',')}</span>
+                        </div>
+                        <button onclick="quickAddToCart(${c.id})" class="bg-amber-100 hover:bg-amber-600 text-amber-900 hover:text-white font-bold px-4 py-2 rounded-xl text-xs transition active:scale-95 flex items-center gap-1.5">
+                            <i class="fa-solid fa-plus"></i> Adicionar
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // MODAL DE DETALHES DO PRODUTO (PDP)
+        function openPDP(id) {
+            activePDPProduct = COOKIES_DATA.find(c => c.id === id);
+            pdpQtyValue = 1;
+
+            document.getElementById('pdp-image').src = activePDPProduct.img;
+            document.getElementById('pdp-title').innerText = activePDPProduct.title;
+            document.getElementById('pdp-price').innerText = `R$ ${activePDPProduct.price.toFixed(2).replace('.', ',')}`;
+            document.getElementById('pdp-desc').innerText = activePDPProduct.desc;
+            document.getElementById('pdp-rating').innerText = activePDPProduct.rating;
+            document.getElementById('pdp-tag').innerText = activePDPProduct.tag;
+            document.getElementById('pdp-qty').innerText = '1';
+            document.getElementById('freight-result').classList.add('hidden');
+            document.getElementById('cep-input').value = '';
+
+            const modal = document.getElementById('pdp-modal');
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                modal.children[0].classList.remove('scale-95');
+            }, 10);
+        }
+
+        function closePDP() {
+            const modal = document.getElementById('pdp-modal');
+            modal.classList.add('opacity-0');
+            modal.children[0].classList.add('scale-95');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 300);
+        }
+
+        function adjustPDPQty(delta) {
+            pdpQtyValue = Math.max(1, pdpQtyValue + delta);
+            document.getElementById('pdp-qty').innerText = pdpQtyValue;
+        }
+
+        function calculateFreight() {
+            const cep = document.getElementById('cep-input').value;
+            const res = document.getElementById('freight-result');
+            if (cep.length >= 8) {
+                res.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-600"></i> Frete Expresso: <strong>R$ 0,00 (Grátis)</strong> - Entrega em até 30 min.`;
+                res.classList.remove('hidden');
+            } else {
+                res.innerHTML = `<span class="text-rose-600">Digite um CEP válido com 8 dígitos.</span>`;
+                res.classList.remove('hidden');
+            }
+        }
+
+        function addPDPToCart() {
+            if (!activePDPProduct) return;
+            const extraSauce = document.getElementById('addon-sauce').checked;
+            const itemPrice = activePDPProduct.price + (extraSauce ? 4.50 : 0);
+            const titleModifier = extraSauce ? `${activePDPProduct.title} (+ Calda Extra)` : activePDPProduct.title;
+
+            addToCart({
+                id: activePDPProduct.id,
+                title: titleModifier,
+                price: itemPrice,
+                img: activePDPProduct.img
+            }, pdpQtyValue);
+
+            closePDP();
+            toggleCartDrawer(true);
+        }
+
+        // ADICIONAR RÁPIDO AO CARRINHO
+        function quickAddToCart(id) {
+            const product = COOKIES_DATA.find(c => c.id === id);
+            addToCart(product, 1);
+            showToast(`"${product.title}" adicionado ao carrinho!`);
+        }
+
+        function addToCart(product, qty) {
+            const existing = cart.find(item => item.title === product.title);
+            if (existing) {
+                existing.qty += qty;
+            } else {
+                cart.push({ ...product, qty });
+            }
+            updateCartUI();
+        }
+
+        function updateCartQty(index, delta) {
+            cart[index].qty += delta;
+            if (cart[index].qty <= 0) {
+                cart.splice(index, 1);
+            }
+            updateCartUI();
+        }
+
+        // ATUALIZAÇÃO DO CARRINHO (DRAWER + TOTALISADORES)
+        function updateCartUI() {
+            const totalCount = cart.reduce((sum, item) => sum + item.qty, 0);
+            const subtotal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+
+            document.getElementById('cart-count').innerText = totalCount;
+            document.getElementById('drawer-item-count').innerText = `${totalCount} ${totalCount === 1 ? 'item' : 'itens'}`;
+            document.getElementById('cart-subtotal').innerText = `R$ ${subtotal.toFixed(2).replace('.', ',')}`;
+            document.getElementById('cart-total').innerText = `R$ ${subtotal.toFixed(2).replace('.', ',')}`;
+
+            // Barra de Frete Grátis
+            const freeShippingGoal = 40.00;
+            const freeShippingBar = document.getElementById('free-shipping-bar');
+            const freeShippingText = document.getElementById('free-shipping-text');
+            const percent = Math.min(100, (subtotal / freeShippingGoal) * 100);
+            
+            freeShippingBar.style.width = `${percent}%`;
+            if (subtotal >= freeShippingGoal) {
+                freeShippingText.innerHTML = `🎉 Você ganhou <strong>FRETE GRÁTIS!</strong>`;
+            } else {
+                const diff = (freeShippingGoal - subtotal).toFixed(2).replace('.', ',');
+                freeShippingText.innerHTML = `Adicione R$ ${diff} para <strong>Frete Grátis!</strong>`;
+            }
+
+            // Renderizar itens no Drawer
+            const container = document.getElementById('cart-items-container');
+            if (cart.length === 0) {
+                container.innerHTML = `
+                    <div class="py-12 text-center text-stone-400">
+                        <i class="fa-solid fa-basket-shopping text-5xl mb-3"></i>
+                        <p class="font-bold text-sm">Seu carrinho está vazio.</p>
+                        <p class="text-xs mt-1">Que tal escolher um cookie delicioso?</p>
+                    </div>
+                `;
+            } else {
+                container.innerHTML = cart.map((item, index) => `
+                    <div class="flex items-center gap-3 p-3 bg-stone-50 rounded-2xl border border-stone-200">
+                        <img src="${item.img}" alt="" class="w-14 h-14 rounded-xl object-cover">
+                        <div class="flex-1 min-w-0">
+                            <h4 class="font-bold text-xs text-stone-800 truncate">${item.title}</h4>
+                            <p class="text-amber-700 font-extrabold text-xs mt-0.5">R$ ${item.price.toFixed(2).replace('.', ',')}</p>
+                        </div>
+                        <div class="flex items-center border border-stone-200 rounded-lg bg-white p-0.5">
+                            <button onclick="updateCartQty(${index}, -1)" class="w-6 h-6 rounded flex items-center justify-center font-bold text-xs text-stone-600 hover:bg-stone-100">-</button>
+                            <span class="w-6 text-center font-bold text-xs">${item.qty}</span>
+                            <button onclick="updateCartQty(${index}, 1)" class="w-6 h-6 rounded flex items-center justify-center font-bold text-xs text-stone-600 hover:bg-stone-100">+</button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+        }
+
+        // TOGGLE DO CART DRAWER
+        function toggleCartDrawer(open) {
+            const drawer = document.getElementById('cart-drawer');
+            const panel = document.getElementById('cart-drawer-panel');
+
+            if (open) {
+                drawer.classList.remove('pointer-events-none');
+                drawer.classList.remove('opacity-0');
+                panel.classList.remove('translate-x-full');
+            } else {
+                drawer.classList.add('opacity-0');
+                panel.classList.add('translate-x-full');
+                setTimeout(() => {
+                    drawer.classList.add('pointer-events-none');
+                }, 300);
+            }
+        }
+
+        // IR PARA CHECKOUT
+        function goToCheckout() {
+            if (cart.length === 0) {
+                showToast("Adicione ao menos 1 item para ir ao checkout!");
+                return;
+            }
+            toggleCartDrawer(false);
+            showScreen('checkout');
+        }
+
+        function renderCheckoutSummary() {
+            const container = document.getElementById('checkout-summary-items');
+            const subtotal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+
+            container.innerHTML = cart.map(item => `
+                <div class="flex items-center justify-between text-xs">
+                    <span class="text-stone-700 font-medium">${item.qty}x ${item.title}</span>
+                    <span class="font-bold text-stone-900">R$ ${(item.price * item.qty).toFixed(2).replace('.', ',')}</span>
+                </div>
+            `).join('');
+
+            document.getElementById('chk-subtotal').innerText = `R$ ${subtotal.toFixed(2).replace('.', ',')}`;
+            document.getElementById('chk-total').innerText = `R$ ${subtotal.toFixed(2).replace('.', ',')}`;
+        }
+
+        function completeOrder() {
+            cart = [];
+            updateCartUI();
+            showScreen('success');
+            showToast("🎉 Pedido efetuado com sucesso!");
+        }
+
+        // FILTROS DE CATEGORIA E BUSCA
+        function filterCategory(cat) {
+            document.querySelectorAll('.cat-chip').forEach(btn => {
+                btn.classList.remove('bg-amber-600', 'text-white');
+                btn.classList.add('bg-white', 'text-stone-600');
+            });
+            event.target.classList.remove('bg-white', 'text-stone-600');
+            event.target.classList.add('bg-amber-600', 'text-white');
+
+            if (cat === 'all') {
+                renderCatalog(COOKIES_DATA);
+            } else if (cat === 'best') {
+                renderCatalog(COOKIES_DATA.filter(c => c.isBest));
+            } else {
+                renderCatalog(COOKIES_DATA.filter(c => c.category === cat));
+            }
+        }
+
+        function filterCookies() {
+            const query = document.getElementById('search-input').value.toLowerCase();
+            const filtered = COOKIES_DATA.filter(c => 
+                c.title.toLowerCase().includes(query) || c.desc.toLowerCase().includes(query)
+            );
+            renderCatalog(filtered);
+        }
+
+        function scrollToGrid() {
+            document.getElementById('catalog-grid-anchor').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // AUXILIARES
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-message').innerText = msg;
+            toast.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-4');
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'pointer-events-none', 'translate-y-4');
+            }, 3000);
+        }
+
+        function startTimer() {
+            timerInterval = setInterval(() => {
+                timerSeconds++;
+                const mins = String(Math.floor(timerSeconds / 60)).padStart(2, '0');
+                const secs = String(timerSeconds % 60).padStart(2, '0');
+                document.getElementById('timer').innerText = `${mins}:${secs}`;
+            }, 1000);
+        }
+
+        function restartTest() {
+            timerSeconds = 0;
+            cart = [];
+            updateCartUI();
+            showScreen('catalog');
+            showToast("🧪 Teste de Usabilidade Reiniciado!");
+        }
+    </script>
+</body>
+</html>
